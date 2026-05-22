@@ -1,0 +1,2662 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>慧诊间 · 随访管理（原型）</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+          "Microsoft YaHei", system-ui, sans-serif;
+        background: #f3f4f6;
+        color: #111827;
+        overflow: hidden;
+        height: 100vh;
+      }
+      /* 顶部导航 */
+      .top-header {
+        background: #fff;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 0 24px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        z-index: 100;
+      }
+      .logo-section { display: flex; align-items: center; gap: 12px; }
+      .logo-icon {
+        width: 32px; height: 32px; background: #dc2626; border-radius: 6px;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff; font-weight: 700; font-size: 14px;
+      }
+      .logo-title { font-size: 15px; font-weight: 600; }
+      .logo-subtitle { font-size: 11px; color: #6b7280; }
+      .breadcrumb { font-size: 13px; color: #6b7280; }
+      .breadcrumb strong { color: #111827; font-weight: 600; }
+      .user-area { display: flex; align-items: center; gap: 12px; font-size: 13px; color: #4b5563; }
+      .user-avatar {
+        width: 32px; height: 32px; border-radius: 50%; background: #fee2e2;
+        display: flex; align-items: center; justify-content: center; color: #dc2626; font-size: 14px;
+      }
+
+      /* 主布局 */
+      .app-shell { display: flex; height: calc(100vh - 56px); position: relative; }
+      .sidebar-nav {
+        width: 200px; background: #fff; border-right: 1px solid #e5e7eb; padding: 16px 0;
+      }
+      .sidebar-nav-item {
+        padding: 10px 20px; font-size: 14px; color: #4b5563; cursor: pointer;
+        display: flex; align-items: center; gap: 8px; transition: background 0.15s;
+      }
+      .sidebar-nav-item:hover { background: #f9fafb; }
+      .sidebar-nav-item.active { background: #fef2f2; color: #dc2626; font-weight: 600; border-right: 3px solid #dc2626; }
+
+      .main-content { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+      /* 页面容器 */
+      .page-view { display: none; flex: 1; overflow: hidden; }
+      .page-view.active { display: flex; flex-direction: column; }
+
+      /* 病案详情布局 */
+      .cases-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 0;
+        flex: 1;
+        overflow: hidden;
+        background: #f3f4f6;
+      }
+      .cases-panel-left {
+        background: #fff;
+        border-right: 1px solid #e5e7eb;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .cases-panel-header { padding: 16px; border-bottom: 1px solid #f3f4f6; }
+      .cases-panel-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+      .cases-panel-desc { font-size: 11px; color: #9ca3af; }
+      .case-search {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 8px 12px;
+      }
+      .case-search input {
+        border: none; background: transparent; flex: 1; font-size: 13px; outline: none;
+      }
+      .case-list { flex: 1; overflow-y: auto; list-style: none; }
+      .case-list-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f9fafb;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+      .case-list-item:hover { background: #f9fafb; }
+      .case-list-item.active { background: #fef2f2; border-left: 3px solid #dc2626; }
+      .case-list-id { font-size: 13px; font-weight: 600; color: #111827; }
+      .case-list-meta { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+      .case-list-status { font-size: 11px; margin-top: 4px; }
+      .case-list-status.pending { color: #2563eb; }
+      .case-list-status.soon { color: #d97706; }
+      .case-list-status.overdue { color: #dc2626; }
+
+      .cases-panel-right {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: 20px 24px;
+      }
+      .detail-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 16px;
+      }
+      .detail-patient-name { font-size: 18px; font-weight: 600; }
+      .detail-case-id { font-size: 12px; color: #6b7280; margin-top: 4px; }
+
+      /* Tab */
+      .detail-tabs {
+        display: flex;
+        gap: 0;
+        border-bottom: 1px solid #e5e7eb;
+        margin-bottom: 20px;
+      }
+      .detail-tab {
+        padding: 10px 20px;
+        font-size: 14px;
+        color: #6b7280;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+        transition: color 0.15s;
+      }
+      .detail-tab:hover { color: #111827; }
+      .detail-tab.active { color: #dc2626; border-bottom-color: #dc2626; font-weight: 600; }
+
+      .tab-panel { display: none; flex: 1; overflow-y: auto; flex-direction: column; }
+      .tab-panel.active { display: flex; }
+
+      /* 会话列表占位 */
+      .session-placeholder {
+        flex: 1;
+        background: #fff;
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        color: #9ca3af;
+        border: 1px dashed #e5e7eb;
+      }
+      .session-item {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        border: 1px solid #f3f4f6;
+        cursor: pointer;
+        transition: box-shadow 0.15s;
+      }
+      .session-item:hover { box-shadow: 0 4px 12px rgba(220, 38, 38, 0.08); }
+      .session-item-title { font-size: 14px; font-weight: 600; }
+      .session-item-meta { font-size: 12px; color: #9ca3af; margin-top: 6px; }
+
+      /* 随访列表 — 临床病历视图 */
+      #panel-followup { overflow: hidden; }
+      .followup-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+        min-height: 0;
+      }
+      .followup-panel-wrap { position: relative; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+      .followup-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fafafa;
+        flex-shrink: 0;
+      }
+      .followup-toolbar-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+      .followup-toolbar-right { display: flex; align-items: center; gap: 8px; }
+      .view-toggle {
+        display: inline-flex;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .view-toggle-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+      }
+      .view-toggle-btn.active { background: #dc2626; color: #fff; }
+      .toolbar-text { font-size: 12px; color: #9ca3af; }
+      .btn-text {
+        padding: 6px 10px;
+        font-size: 12px;
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+      }
+      .btn-text:hover { color: #dc2626; }
+      .patient-brief {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        padding: 12px 16px;
+        background: linear-gradient(90deg, #fef2f2 0%, #fff 100%);
+        border-bottom: 1px solid #fecaca;
+        flex-shrink: 0;
+      }
+      .patient-brief-item { font-size: 12px; color: #4b5563; }
+      .patient-brief-item strong { color: #111827; font-weight: 600; margin-right: 4px; }
+      .visit-tabs {
+        display: flex;
+        gap: 8px;
+        padding: 12px 16px 0;
+        border-bottom: 1px solid #f3f4f6;
+        flex-shrink: 0;
+        overflow-x: auto;
+      }
+      .visit-tab {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 14px;
+        border-radius: 8px 8px 0 0;
+        border: 1px solid transparent;
+        border-bottom: none;
+        font-size: 13px;
+        color: #6b7280;
+        cursor: pointer;
+        white-space: nowrap;
+        background: #f9fafb;
+        margin-bottom: -1px;
+      }
+      .visit-tab:hover { color: #111827; background: #f3f4f6; }
+      .visit-tab.active {
+        background: #fff;
+        color: #dc2626;
+        font-weight: 600;
+        border-color: #e5e7eb;
+        border-bottom-color: #fff;
+      }
+      .visit-tab-date { font-size: 11px; color: #9ca3af; font-weight: 400; }
+      .followup-badge {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 999px;
+        font-weight: 500;
+      }
+      .followup-badge.done { background: #f1f5f9; color: #64748b; }
+      .followup-badge.soon { background: #fef3c7; color: #b45309; }
+      .followup-badge.pending { background: #dbeafe; color: #1d4ed8; }
+      .followup-badge.overdue { background: #fee2e2; color: #991b1b; }
+      .followup-body { flex: 1; overflow-y: auto; padding: 0 0 8px; }
+      .followup-detail-view { padding: 12px 16px 16px; }
+      .followup-matrix-view { display: none; }
+      .followup-matrix-view.active { display: block; }
+      .followup-detail-view.hidden { display: none; }
+      .record-section {
+        margin-bottom: 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .record-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        background: #f9fafb;
+        cursor: pointer;
+        user-select: none;
+      }
+      .record-section-header:hover { background: #f3f4f6; }
+      .record-section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .record-section-title::before {
+        content: "";
+        width: 3px;
+        height: 14px;
+        background: #dc2626;
+        border-radius: 2px;
+      }
+      .record-section-count { font-size: 11px; color: #9ca3af; font-weight: 400; }
+      .record-section-chevron { font-size: 12px; color: #9ca3af; transition: transform 0.2s; }
+      .record-section.collapsed .record-section-chevron { transform: rotate(-90deg); }
+      .record-section.collapsed .record-section-body { display: none; }
+      .field-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0;
+      }
+      @media (max-width: 1200px) { .field-grid { grid-template-columns: repeat(3, 1fr); } }
+      @media (max-width: 900px) { .field-grid { grid-template-columns: repeat(2, 1fr); } }
+      .field-cell {
+        padding: 10px 14px;
+        border-top: 1px solid #f3f4f6;
+        border-right: 1px solid #f3f4f6;
+        min-height: 52px;
+      }
+      .field-label { font-size: 11px; color: #9ca3af; margin-bottom: 4px; line-height: 1.3; }
+      .field-value { font-size: 13px; color: #111827; font-weight: 500; line-height: 1.4; word-break: break-all; }
+      .field-value.empty { color: #d1d5db; font-weight: 400; }
+      .field-value.tag-yes { color: #047857; }
+      .field-value.tag-no { color: #6b7280; }
+      .field-cell.span-2 { grid-column: span 2; }
+      .field-cell.span-4 { grid-column: 1 / -1; }
+      .matrix-scroll { overflow-x: auto; margin: 0 16px 16px; border: 1px solid #e5e7eb; border-radius: 8px; }
+      .matrix-table { width: 100%; min-width: 800px; border-collapse: collapse; font-size: 12px; }
+      .matrix-table th, .matrix-table td {
+        padding: 8px 12px; border: 1px solid #f3f4f6; text-align: left; vertical-align: top;
+      }
+      .matrix-table thead th { background: #f9fafb; font-weight: 600; color: #374151; }
+      .matrix-table .col-field { width: 148px; min-width: 148px; background: #fafafa; color: #6b7280; font-weight: 500; }
+      .matrix-table .col-baseline { background: #fff7ed; min-width: 100px; }
+      .matrix-table tbody tr:hover td { background: #fefefe; }
+      .matrix-table .section-row td {
+        background: #f3f4f6; font-weight: 600; color: #374151; font-size: 12px;
+      }
+      .matrix-legend { padding: 10px 16px 6px; font-size: 11px; color: #9ca3af; }
+      .followup-footer {
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 16px;
+        background: #fff;
+        border-top: 1px solid #f3f4f6;
+      }
+      .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        border: none;
+        transition: opacity 0.15s, background 0.15s;
+      }
+      .btn:hover { opacity: 0.9; }
+      .btn-primary { background: #dc2626; color: #fff; }
+      .btn-secondary { background: #fff; color: #374151; border: 1px solid #d1d5db; }
+      .btn-ghost { background: transparent; color: #dc2626; border: 1px solid #fecaca; }
+      .btn-sm { padding: 6px 12px; font-size: 12px; }
+      .btn-link { background: none; border: none; color: #2563eb; cursor: pointer; font-size: 12px; padding: 0; }
+      .btn-link:hover { text-decoration: underline; }
+
+      /* 左下角固定入口 */
+      .fab-followup-mgmt {
+        position: fixed;
+        left: 220px;
+        bottom: 24px;
+        z-index: 50;
+        padding: 12px 20px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        font-size: 13px;
+        font-weight: 600;
+        color: #dc2626;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: box-shadow 0.15s, transform 0.15s;
+      }
+      .fab-followup-mgmt:hover {
+        box-shadow: 0 6px 20px rgba(220, 38, 38, 0.2);
+        transform: translateY(-1px);
+      }
+      .fab-followup-mgmt.hidden { display: none; }
+
+      /* 全局随访管理页 */
+      .mgmt-page { padding: 24px; overflow-y: auto; flex: 1; }
+      .mgmt-page-title { font-size: 20px; font-weight: 600; }
+      .mgmt-page-desc { font-size: 13px; color: #6b7280; margin-top: 4px; }
+
+      .filter-bar {
+        background: #fff;
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+      .filter-bar label { font-size: 12px; color: #6b7280; }
+      .filter-bar select,
+      .filter-bar input {
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 13px;
+        background: #f9fafb;
+      }
+      .filter-bar .search-input { min-width: 200px; }
+
+      .data-table-wrap {
+        background: #fff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+      .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      .data-table th {
+        background: #f9fafb;
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: #374151;
+        border-bottom: 1px solid #e5e7eb;
+      }
+      .data-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f3f4f6;
+        color: #4b5563;
+      }
+      .data-table tr:hover td { background: #fafafa; }
+      .data-table .case-link {
+        color: #dc2626;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .data-table .case-link:hover { text-decoration: underline; }
+      .status-tag {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .status-tag.done { background: #d1fae5; color: #047857; }
+      .status-tag.pending { background: #dbeafe; color: #1d4ed8; }
+      .status-tag.soon { background: #ffedd5; color: #c2410c; }
+      .status-tag.overdue { background: #fee2e2; color: #b91c1c; }
+
+      .table-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+      .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        font-size: 13px;
+        color: #6b7280;
+      }
+      .pagination-btns { display: flex; gap: 8px; }
+      .batch-bar {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: #fef2f2;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-size: 13px;
+      }
+
+      /* 遮罩与弹窗 */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .overlay.active { display: flex; }
+      .overlay.drawer-mode { justify-content: flex-end; align-items: stretch; }
+
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        width: 90%;
+        max-width: 520px;
+        max-height: 90vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+      }
+      .modal-lg { max-width: 640px; }
+      .modal-xl { max-width: 920px; width: 94%; max-height: 92vh; }
+      .modal-add-followup {
+        display: flex;
+        flex-direction: column;
+        height: 88vh;
+        max-height: 880px;
+      }
+      .add-mode-tabs {
+        display: flex;
+        gap: 0;
+        padding: 0 20px;
+        border-bottom: 1px solid #e5e7eb;
+        background: #fafafa;
+        flex-shrink: 0;
+      }
+      .add-mode-tab {
+        padding: 10px 18px;
+        font-size: 13px;
+        border: none;
+        background: transparent;
+        color: #6b7280;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+      }
+      .add-mode-tab.active { color: #dc2626; border-bottom-color: #dc2626; font-weight: 600; }
+      .add-modal-panels { flex: 1; min-height: 0; overflow: hidden; }
+      .add-panel { display: none; height: 100%; flex-direction: column; }
+      .add-panel.active { display: flex; }
+      .modal-body-scroll { flex: 1; overflow-y: auto; padding: 16px 20px; }
+
+      /* AI 图片识别对话 */
+      .add-ai-panel { background: #f3f4f6; }
+      .ai-chat-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px 20px 12px;
+      }
+      .ai-msg { margin-bottom: 16px; }
+      .ai-msg-user { display: flex; flex-direction: column; align-items: flex-end; }
+      .ai-msg-bot { display: flex; align-items: flex-start; gap: 10px; }
+      .ai-msg-meta { font-size: 11px; color: #9ca3af; margin-bottom: 6px; }
+      .ai-msg-user .ai-msg-meta { text-align: right; }
+      .ai-user-bubble {
+        background: #fff;
+        border-radius: 12px;
+        padding: 10px 14px;
+        max-width: 320px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+        font-size: 13px;
+        color: #111827;
+      }
+      .ai-file-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-top: 8px;
+        padding: 10px 12px;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        text-align: left;
+      }
+      .ai-file-icon {
+        width: 36px; height: 36px; border-radius: 6px;
+        background: #d1fae5; color: #047857;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 11px; font-weight: 700;
+      }
+      .ai-file-icon.img { background: #fee2e2; color: #b91c1c; }
+      .ai-file-name { font-size: 13px; font-weight: 500; color: #111827; }
+      .ai-file-size { font-size: 11px; color: #9ca3af; }
+      .ai-bot-avatar {
+        width: 36px; height: 36px; border-radius: 50%;
+        background: #dc2626; color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 700; flex-shrink: 0;
+      }
+      .ai-bot-bubble {
+        max-width: 420px;
+        background: #fff;
+        border-radius: 12px;
+        padding: 12px 14px;
+        font-size: 13px;
+        line-height: 1.65;
+        color: #374151;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      }
+      .ai-extract-table {
+        width: 100%;
+        margin: 10px 0;
+        font-size: 12px;
+        border-collapse: collapse;
+      }
+      .ai-extract-table td {
+        padding: 4px 8px;
+        border-bottom: 1px solid #f3f4f6;
+      }
+      .ai-extract-table td:first-child { color: #9ca3af; width: 38%; }
+      .ai-extract-table td:last-child { color: #111827; font-weight: 500; }
+      .ai-typing { display: flex; gap: 4px; padding: 8px 0; }
+      .ai-typing span {
+        width: 6px; height: 6px; border-radius: 50%; background: #9ca3af;
+        animation: aiTyping 1.2s infinite;
+      }
+      .ai-typing span:nth-child(2) { animation-delay: 0.2s; }
+      .ai-typing span:nth-child(3) { animation-delay: 0.4s; }
+      @keyframes aiTyping {
+        0%, 100% { opacity: 0.3; transform: translateY(0); }
+        50% { opacity: 1; transform: translateY(-3px); }
+      }
+      .ai-chat-footer {
+        flex-shrink: 0;
+        padding: 10px 16px 14px;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+      }
+      .ai-quick-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+      .ai-quick-chip {
+        padding: 4px 10px;
+        border-radius: 999px;
+        border: none;
+        background: #fecaca;
+        color: #b91c1c;
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .ai-quick-chip:hover { background: #fca5a5; }
+      .ai-input-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 8px 12px;
+      }
+      .ai-input-row:focus-within { border-color: #fecaca; box-shadow: 0 0 0 2px rgba(220,38,38,0.1); }
+      .ai-chat-textarea {
+        flex: 1;
+        border: none;
+        outline: none;
+        resize: none;
+        font-size: 13px;
+        font-family: inherit;
+        min-height: 22px;
+        max-height: 80px;
+        line-height: 1.5;
+      }
+      .ai-input-actions { display: flex; align-items: center; gap: 10px; color: #9ca3af; }
+      .ai-input-btn {
+        border: none; background: transparent; cursor: pointer;
+        font-size: 18px; color: #6b7280; padding: 2px;
+      }
+      .ai-input-btn:hover { color: #dc2626; }
+      .ai-input-btn.send { color: #dc2626; font-size: 20px; }
+      .ai-upload-hint {
+        text-align: center;
+        padding: 40px 20px;
+        color: #9ca3af;
+        font-size: 13px;
+      }
+      .ai-upload-hint-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+      #ai-file-input { display: none; }
+      .form-section-block {
+        margin-bottom: 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .form-section-block-title {
+        padding: 10px 14px;
+        background: #f9fafb;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        border-bottom: 1px solid #f3f4f6;
+      }
+      .form-section-block-body {
+        padding: 14px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px 16px;
+      }
+      @media (max-width: 768px) { .form-section-block-body { grid-template-columns: 1fr 1fr; } }
+      .form-section-block-body .span-2 { grid-column: span 2; }
+      .form-section-block-body .span-3 { grid-column: 1 / -1; }
+      .form-hint { font-size: 11px; color: #9ca3af; margin-bottom: 12px; }
+      .mgmt-page-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      #page-mgmt .mgmt-page-title { margin-bottom: 4px; }
+      .mgmt-page-header-main { flex: 1; }
+      .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 14px;
+        font-size: 13px;
+        color: #374151;
+        background: #fff;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: border-color 0.15s, color 0.15s;
+      }
+      .btn-back:hover { border-color: #dc2626; color: #dc2626; }
+      .modal-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-title { font-size: 16px; font-weight: 600; }
+      .modal-close {
+        width: 32px; height: 32px; border: none; background: #f3f4f6;
+        border-radius: 8px; cursor: pointer; font-size: 18px; color: #6b7280;
+      }
+      .modal-close:hover { background: #e5e7eb; }
+      .modal-body { padding: 20px; overflow-y: auto; flex: 1; }
+      .modal-footer {
+        padding: 16px 20px;
+        border-top: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+      }
+
+      /* 抽屉 */
+      .drawer {
+        width: 520px;
+        max-width: 100%;
+        background: #fff;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        box-shadow: -8px 0 30px rgba(0, 0, 0, 0.12);
+        animation: slideIn 0.25s ease;
+      }
+      @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+      .drawer-section { margin-bottom: 20px; }
+      .drawer-section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f3f4f6;
+      }
+      .drawer-info-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        padding: 6px 0;
+        color: #4b5563;
+      }
+      .drawer-info-row span:first-child { color: #9ca3af; }
+      .ai-summary {
+        background: linear-gradient(135deg, #fef2f2 0%, #fff7ed 100%);
+        border-radius: 8px;
+        padding: 14px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #4b5563;
+        border: 1px solid #fecaca;
+      }
+      .ai-summary-label {
+        font-size: 11px;
+        color: #dc2626;
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .trend-placeholder {
+        height: 120px;
+        background: #f9fafb;
+        border-radius: 8px;
+        border: 1px dashed #e5e7eb;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #9ca3af;
+        margin-top: 8px;
+      }
+      .tongue-compare {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-top: 8px;
+      }
+      .tongue-box {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+        font-size: 12px;
+        color: #6b7280;
+        min-height: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+
+      /* 表单 */
+      .form-group { margin-bottom: 16px; }
+      .form-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 6px;
+      }
+      .form-label .required { color: #dc2626; }
+      .form-input,
+      .form-select,
+      .form-textarea {
+        width: 100%;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-family: inherit;
+      }
+      .form-textarea { min-height: 80px; resize: vertical; }
+      .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .upload-zone {
+        border: 2px dashed #e5e7eb;
+        border-radius: 8px;
+        padding: 24px;
+        text-align: center;
+        font-size: 13px;
+        color: #9ca3af;
+        cursor: pointer;
+      }
+      .upload-zone:hover { border-color: #fecaca; background: #fef2f2; }
+      .switch-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #f9fafb;
+        font-size: 13px;
+      }
+      .switch {
+        width: 44px; height: 24px; background: #d1d5db; border-radius: 999px;
+        position: relative; cursor: pointer; transition: background 0.2s;
+      }
+      .switch.on { background: #dc2626; }
+      .switch::after {
+        content: "";
+        position: absolute;
+        width: 20px; height: 20px;
+        background: #fff;
+        border-radius: 50%;
+        top: 2px; left: 2px;
+        transition: transform 0.2s;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      }
+      .switch.on::after { transform: translateX(20px); }
+
+      /* 提醒渠道弹窗 */
+      .remind-channels { display: flex; flex-direction: column; gap: 12px; }
+      .remind-channel {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: border-color 0.15s;
+      }
+      .remind-channel:hover { border-color: #dc2626; }
+      .remind-channel input { width: 18px; height: 18px; }
+
+      /* 开发导航（可拖拽） */
+      .dev-nav {
+        position: fixed;
+        left: auto;
+        right: 16px;
+        top: 72px;
+        background: #1f2937;
+        color: #fff;
+        border-radius: 10px;
+        font-size: 11px;
+        z-index: 300;
+        width: 168px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+        user-select: none;
+        touch-action: none;
+      }
+      .dev-nav.collapsed .dev-nav-body { display: none; }
+      .dev-nav.collapsed { width: auto; min-width: 120px; }
+      .dev-nav-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        padding: 8px 10px;
+        border-bottom: 1px solid #374151;
+        cursor: grab;
+      }
+      .dev-nav-header:active { cursor: grabbing; }
+      .dev-nav-title { font-weight: 600; color: #9ca3af; font-size: 11px; flex: 1; }
+      .dev-nav-ctrl {
+        width: 22px; height: 22px; border: none; background: #374151;
+        color: #d1d5db; border-radius: 4px; cursor: pointer; font-size: 12px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      .dev-nav-ctrl:hover { background: #4b5563; color: #fff; }
+      .dev-nav-body { padding: 8px 10px 10px; }
+      .dev-nav-date { font-size: 10px; color: #6b7280; margin-bottom: 8px; }
+      .dev-nav-item {
+        padding: 6px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-bottom: 4px;
+      }
+      .dev-nav-item:hover { background: #374151; }
+      .dev-nav-item:last-child { margin-bottom: 0; }
+
+      .toast {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: #111827;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 13px;
+        z-index: 400;
+        opacity: 0;
+        transition: opacity 0.3s, transform 0.3s;
+        pointer-events: none;
+      }
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 顶部导航 -->
+    <header class="top-header">
+      <div class="logo-section">
+        <div class="logo-icon">慧</div>
+        <div>
+          <div class="logo-title">慧诊间 · 医利库</div>
+          <div class="logo-subtitle">随访管理模块原型 v1.0</div>
+        </div>
+      </div>
+      <div class="breadcrumb" id="breadcrumb">
+        首页 → <strong>我的病案</strong> → 病案ID: 10001
+      </div>
+      <div class="user-area">
+        <span>张医生 · 皮肤科</span>
+        <div class="user-avatar">张</div>
+      </div>
+    </header>
+
+    <div class="app-shell">
+      <!-- 左侧菜单 -->
+      <nav class="sidebar-nav">
+        <div class="sidebar-nav-item" data-nav="home">🏠 首页</div>
+        <div class="sidebar-nav-item active" data-nav="cases">📋 我的病案</div>
+        <div class="sidebar-nav-item" data-nav="dashboard">📈 仪表盘</div>
+      </nav>
+
+      <main class="main-content">
+        <!-- 病案详情页（含随访列表） -->
+        <div class="page-view active" id="page-cases">
+          <div class="cases-layout">
+            <!-- 左侧病案列表 -->
+            <aside class="cases-panel-left">
+              <div class="cases-panel-header">
+                <div class="cases-panel-title">病案列表</div>
+                <div class="cases-panel-desc">特应性皮炎规范化诊疗项目</div>
+                <div class="case-search">
+                  <span>🔍</span>
+                  <input type="text" placeholder="搜索病案ID / 患者姓名" id="case-search" oninput="filterCases()" />
+                </div>
+              </div>
+              <ul class="case-list" id="case-list"></ul>
+            </aside>
+
+            <!-- 右侧详情 -->
+            <section class="cases-panel-right">
+              <div class="detail-header">
+                <div>
+                  <div class="detail-patient-name" id="detail-patient-name">张三</div>
+                  <div class="detail-case-id" id="detail-case-id">病案ID: 10001</div>
+                </div>
+              </div>
+
+              <div class="detail-tabs">
+                <div class="detail-tab active" data-tab="sessions" onclick="switchTab('sessions')">会话列表</div>
+                <div class="detail-tab" data-tab="followup" onclick="switchTab('followup')">随访列表</div>
+              </div>
+
+              <!-- 会话列表 Tab -->
+              <div class="tab-panel active" id="panel-sessions"></div>
+
+              <!-- 随访列表 Tab -->
+              <div class="tab-panel" id="panel-followup">
+                <div class="followup-panel-wrap">
+                  <div class="followup-panel" id="followup-panel">
+                    <div class="followup-toolbar">
+                      <div class="followup-toolbar-left">
+                        <div class="view-toggle">
+                          <button type="button" class="view-toggle-btn active" id="btn-view-detail" onclick="setFollowupView('detail')">分次详情</button>
+                          <button type="button" class="view-toggle-btn" id="btn-view-matrix" onclick="setFollowupView('matrix')">访视对照表</button>
+                        </div>
+                        <button type="button" class="btn-text" onclick="toggleAllSections(true)">展开全部</button>
+                        <button type="button" class="btn-text" onclick="toggleAllSections(false)">收起全部</button>
+                        <span class="toolbar-text" id="followup-field-count"></span>
+                      </div>
+                      <div class="followup-toolbar-right">
+                        <button type="button" class="btn-text" onclick="openFollowupDrawer(currentVisitRound)">完整详情抽屉</button>
+                      </div>
+                    </div>
+                    <div class="patient-brief" id="patient-brief"></div>
+                    <div class="visit-tabs" id="visit-tabs"></div>
+                    <div class="followup-body">
+                      <div class="followup-detail-view" id="followup-detail-view"></div>
+                      <div class="followup-matrix-view" id="followup-matrix-view">
+                        <div class="matrix-legend">对照表：横向为各次访视，纵向为 CRF 字段（与科研表单一致）</div>
+                        <div class="matrix-scroll" id="matrix-scroll"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="followup-footer">
+                    <span class="toolbar-text" id="followup-sync-hint">数据随系统日期自动更新</span>
+                    <div>
+                      <button class="btn btn-secondary" onclick="openSettingsModal()">随访设置</button>
+                      <button class="btn btn-primary" onclick="openAddFollowupModal()">添加随访</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- 病案随访管理（全局） -->
+        <div class="page-view" id="page-mgmt">
+          <div class="mgmt-page">
+            <div class="mgmt-page-header">
+              <button type="button" class="btn-back" onclick="showPage('cases')">← 返回我的病案</button>
+              <div class="mgmt-page-header-main">
+                <div class="mgmt-page-title">病案随访管理</div>
+                <div class="mgmt-page-desc">全病案维度随访状态管理 · 待随访提醒 · 快速完成随访</div>
+              </div>
+            </div>
+
+            <div class="filter-bar">
+              <div>
+                <label>状态筛选</label>
+                <select id="filter-status" onchange="filterTable()">
+                  <option value="">全部状态</option>
+                  <option value="pending">待随访</option>
+                  <option value="soon">即将随访</option>
+                  <option value="done">已随访</option>
+                  <option value="overdue">未随访/超时</option>
+                </select>
+              </div>
+              <div>
+                <label>时间筛选</label>
+                <select>
+                  <option>近7天</option>
+                  <option>近30天</option>
+                  <option>全部</option>
+                </select>
+              </div>
+              <div>
+                <label>医生筛选</label>
+                <select>
+                  <option>全部医生</option>
+                  <option>张医生</option>
+                  <option>李医生</option>
+                  <option>王医生</option>
+                </select>
+              </div>
+              <div>
+                <label>搜索</label>
+                <input type="text" class="search-input" placeholder="病案ID / 患者姓名" id="mgmt-search" oninput="filterTable()" />
+              </div>
+              <button class="btn btn-primary btn-sm" onclick="openBatchRemindModal()">批量提醒</button>
+            </div>
+
+            <div class="batch-bar" id="batch-bar" style="display:none;">
+              <span>已选 <strong id="selected-count">0</strong> 条</span>
+              <button class="btn btn-primary btn-sm" onclick="openBatchRemindModal()">批量发送提醒</button>
+              <button class="btn btn-secondary btn-sm" onclick="clearSelection()">取消选择</button>
+            </div>
+
+            <div class="data-table-wrap">
+              <table class="data-table" id="mgmt-table">
+                <thead>
+                  <tr>
+                    <th><input type="checkbox" id="select-all" onchange="toggleSelectAll(this)" /></th>
+                    <th>病案ID</th>
+                    <th>患者</th>
+                    <th>随访次数</th>
+                    <th>预计随访时间</th>
+                    <th>实际随访时间</th>
+                    <th>下次随访时间</th>
+                    <th>随访状态</th>
+                    <th>操作</th>
+                  </tr>
+                </thead>
+                <tbody id="mgmt-table-body"></tbody>
+              </table>
+              <div class="pagination">
+                <span>共 3 条记录</span>
+                <div class="pagination-btns">
+                  <button class="btn btn-secondary btn-sm" disabled>上一页</button>
+                  <button class="btn btn-secondary btn-sm">下一页</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- 左下角：病案随访管理入口 -->
+    <button class="fab-followup-mgmt" id="fab-mgmt" onclick="showPage('mgmt')">
+      📋 病案随访管理
+    </button>
+
+    <!-- 随访详情抽屉 -->
+    <div class="overlay drawer-mode" id="drawer-overlay" onclick="closeDrawer(event)">
+      <div class="drawer" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title" id="drawer-title">随访详情 · 第一次随访</span>
+          <button class="modal-close" onclick="closeDrawer()">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="drawer-section">
+            <div class="drawer-section-title">基础信息</div>
+            <div class="drawer-info-row"><span>患者姓名</span><span id="drawer-patient">张三</span></div>
+            <div class="drawer-info-row"><span>病案ID</span><span id="drawer-case-id">10001</span></div>
+            <div class="drawer-info-row"><span>随访时间</span><span id="drawer-time">2025-05-01</span></div>
+            <div class="drawer-info-row"><span>随访次数</span><span id="drawer-round">第 1 次</span></div>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-title">病情变化</div>
+            <div class="drawer-info-row"><span>症状评分 UCT</span><span id="drawer-uct">—</span></div>
+            <div class="drawer-info-row"><span>生活质量 DLQI</span><span id="drawer-dlqi">—</span></div>
+            <div class="ai-summary">
+              <div class="ai-summary-label">✨ AI 分析摘要</div>
+              <div id="drawer-ai">患者舌象由淡红转薄白，脾胃虚寒证型稳定。建议继续温中健脾方案，关注饮食忌辛辣。UCT 较初诊预计改善。</div>
+            </div>
+            <div style="margin-top:12px;font-size:12px;color:#6b7280;">舌像对比</div>
+            <div class="tongue-compare">
+              <div class="tongue-box">📷 初诊舌像<br />淡红舌</div>
+              <div class="tongue-box">📷 本次舌像<br />薄白苔</div>
+            </div>
+            <div class="trend-placeholder">UCT / DLQI 历史变化趋势图（开发接入）</div>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-title">医嘱与方案</div>
+            <div id="drawer-advice" style="font-size:13px;line-height:1.6;color:#4b5563;">继续服药7天，注意饮食温补，避免生冷。</div>
+          </div>
+          <div class="drawer-section">
+            <div class="drawer-section-title">下次随访时间</div>
+            <div class="drawer-info-row"><span>预计时间</span><span id="drawer-next">2025-05-15</span></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeDrawer()">关闭</button>
+          <button class="btn btn-primary" onclick="openAddFollowupModal(); closeDrawer();">编辑随访</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 添加随访弹窗（图片识别 + 手动填写） -->
+    <div class="overlay" id="add-modal-overlay">
+      <div class="modal modal-xl modal-add-followup" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title" id="add-modal-title">添加随访记录</span>
+          <button class="modal-close" onclick="closeModal('add-modal-overlay')">×</button>
+        </div>
+        <div class="add-mode-tabs">
+          <button type="button" class="add-mode-tab active" id="add-tab-ai" onclick="setAddFollowupMode('ai')">图片识别录入</button>
+          <button type="button" class="add-mode-tab" id="add-tab-manual" onclick="setAddFollowupMode('manual')">手动填写</button>
+        </div>
+        <div class="add-modal-panels">
+          <!-- 小智图片识别 -->
+          <div class="add-panel add-ai-panel active" id="add-ai-panel">
+            <div class="ai-chat-body" id="ai-chat-body"></div>
+            <div class="ai-chat-footer">
+              <div class="ai-quick-row">
+                <button type="button" class="ai-quick-chip" onclick="aiQuickChip('收集随访信息')">收集随访信息</button>
+                <button type="button" class="ai-quick-chip" onclick="aiQuickChip('BPDAI')">BPDAI</button>
+                <button type="button" class="ai-quick-chip" onclick="aiQuickChip('PDAI')">PDAI</button>
+                <button type="button" class="ai-quick-chip" onclick="aiQuickChip('IGA')">IGA</button>
+                <button type="button" class="ai-quick-chip" onclick="aiQuickChip('NRS/VAS')">NRS/VAS</button>
+              </div>
+              <div class="ai-input-row">
+                <textarea
+                  class="ai-chat-textarea"
+                  id="ai-chat-input"
+                  rows="1"
+                  placeholder="点击 Enter 发送消息，Ctrl+Enter 换行"
+                  onkeydown="aiChatKeydown(event)"
+                ></textarea>
+                <div class="ai-input-actions">
+                  <button type="button" class="ai-input-btn" title="上传图片/文件" onclick="document.getElementById('ai-file-input').click()">📎</button>
+                  <button type="button" class="ai-input-btn send" title="发送" onclick="aiSendUserMessage()">➤</button>
+                </div>
+              </div>
+              <input type="file" id="ai-file-input" accept="image/*,.xlsx,.xls,.pdf" onchange="handleAiFileUpload(event)" />
+            </div>
+          </div>
+          <!-- 手动 CRF 表单 -->
+          <div class="add-panel" id="add-form-panel">
+            <div class="modal-body-scroll" id="add-form-container"></div>
+          </div>
+        </div>
+        <div class="modal-footer" id="add-modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('add-modal-overlay')">取消</button>
+          <button class="btn btn-secondary" id="btn-apply-ai" onclick="applyAiExtractToForm()" style="display:none;">填入表单校对</button>
+          <button class="btn btn-secondary" onclick="saveFollowup(false)">保存</button>
+          <button class="btn btn-primary" onclick="saveFollowup(true)">保存并提醒</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 随访设置弹窗 -->
+    <div class="overlay" id="settings-modal-overlay">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title">随访设置 · 10001</span>
+          <button class="modal-close" onclick="closeModal('settings-modal-overlay')">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">随访周期</label>
+            <select class="form-select">
+              <option>7天</option>
+              <option selected>14天</option>
+              <option>30天</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">提醒时间</label>
+            <select class="form-select">
+              <option>提前1天</option>
+              <option selected>提前3天</option>
+              <option>提前7天</option>
+            </select>
+          </div>
+          <div class="switch-row">
+            <span>自动提醒</span>
+            <div class="switch on" onclick="toggleSwitch(this)"></div>
+          </div>
+          <div class="switch-row">
+            <span>AI随访建议</span>
+            <div class="switch on" onclick="toggleSwitch(this)"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('settings-modal-overlay')">取消</button>
+          <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 提醒渠道弹窗 -->
+    <div class="overlay" id="remind-modal-overlay">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title">发送随访提醒</span>
+          <button class="modal-close" onclick="closeModal('remind-modal-overlay')">×</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:13px;color:#6b7280;margin-bottom:16px;">选择提醒渠道（支持批量提醒已选病案）</p>
+          <div class="remind-channels">
+            <label class="remind-channel">
+              <input type="checkbox" checked />
+              <span>📱 短信提醒</span>
+            </label>
+            <label class="remind-channel">
+              <input type="checkbox" checked />
+              <span>💬 微信提醒</span>
+            </label>
+            <label class="remind-channel">
+              <input type="checkbox" />
+              <span>🔔 App 推送通知</span>
+            </label>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('remind-modal-overlay')">取消</button>
+          <button class="btn btn-primary" onclick="sendRemind()">确认发送</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 设置周期弹窗 -->
+    <div class="overlay" id="cycle-modal-overlay">
+      <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+          <span class="modal-title">设置随访周期</span>
+          <button class="modal-close" onclick="closeModal('cycle-modal-overlay')">×</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label">随访周期</label>
+            <select class="form-select">
+              <option>7天</option>
+              <option selected>14天</option>
+              <option>30天</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">提醒规则</label>
+            <select class="form-select">
+              <option>提前1天</option>
+              <option selected>提前3天</option>
+              <option>提前7天</option>
+            </select>
+          </div>
+          <div class="switch-row">
+            <span>自动随访策略</span>
+            <div class="switch" onclick="toggleSwitch(this)"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal('cycle-modal-overlay')">取消</button>
+          <button class="btn btn-primary" onclick="saveCycle()">保存</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 开发快捷导航（可拖拽、可折叠） -->
+    <div class="dev-nav" id="dev-nav">
+      <div class="dev-nav-header" id="dev-nav-drag">
+        <span class="dev-nav-title">⋮⋮ 原型导航</span>
+        <button type="button" class="dev-nav-ctrl" id="dev-nav-collapse" title="折叠/展开">−</button>
+      </div>
+      <div class="dev-nav-body" id="dev-nav-body">
+        <div class="dev-nav-date" id="dev-nav-date"></div>
+        <div class="dev-nav-item" onclick="showPage('cases'); switchTab('sessions')">会话列表</div>
+        <div class="dev-nav-item" onclick="showPage('cases'); switchTab('followup')">随访列表</div>
+        <div class="dev-nav-item" onclick="openFollowupDrawer(1)">随访详情抽屉</div>
+        <div class="dev-nav-item" onclick="openAddFollowupModal()">添加随访（AI识别）</div>
+        <div class="dev-nav-item" onclick="openSettingsModal()">随访设置</div>
+        <div class="dev-nav-item" onclick="showPage('mgmt')">全局管理页</div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      /* —— 日期与状态（随系统自然日自动更新） —— */
+      const TODAY = startOfDay(new Date());
+      const SOON_DAYS = 3;
+
+      const STATUS_META = {
+        done: { label: "已随访", card: "done", badge: "done", list: "done", tag: "done" },
+        pending: { label: "待随访", card: "pending", badge: "pending", list: "pending", tag: "pending" },
+        soon: { label: "即将随访", card: "soon", badge: "soon", list: "soon", tag: "soon" },
+        overdue: { label: "未随访/超时", card: "overdue", badge: "overdue", list: "overdue", tag: "overdue" },
+      };
+
+      const ROUND_NAMES = ["", "第一次随访", "第二次随访", "第三次随访"];
+
+      let currentVisitRound = 1;
+      let followupViewMode = "detail";
+      let addFollowupMode = "ai";
+      let aiChatMessages = [];
+      let aiExtractedData = null;
+      let aiExtractPending = false;
+
+      /** CRF 字段分组（与科研表单一致） */
+      const BASELINE_FIELDS = [
+        { key: "queueNo", label: "队列编号" },
+        { key: "name", label: "患者姓名" },
+        { key: "diagnosis", label: "诊断" },
+        { key: "treatmentMode", label: "治疗方式" },
+        { key: "gender", label: "性别" },
+        { key: "age", label: "年龄（岁）" },
+        { key: "weight", label: "体重（kg）" },
+        { key: "height", label: "身高（cm）" },
+        { key: "regNo", label: "登记号" },
+        { key: "phone", label: "电话" },
+        { key: "address", label: "住址", span: 2 },
+        { key: "note", label: "特殊备注", span: 2 },
+        { key: "enrollDate", label: "入组日期" },
+        { key: "source", label: "病人来源" },
+        { key: "doctor", label: "管床医生" },
+        { key: "relapseEnroll", label: "是否复发（入组）", yesNo: true },
+      ];
+
+      const VISIT_FIELD_SECTIONS = [
+        {
+          title: "访视信息",
+          fields: [
+            { key: "visitDate", label: "访视日期" },
+            { key: "photo", label: "是否拍照", yesNo: true },
+            { key: "sample", label: "是否取样", yesNo: true },
+            { key: "relapseVisit", label: "是否复发", yesNo: true },
+          ],
+        },
+        {
+          title: "治疗方案",
+          fields: [
+            { key: "hormone", label: "激素" },
+            { key: "biologic", label: "生物制剂" },
+            { key: "immunosuppressant", label: "免疫抑制剂" },
+            { key: "otherTreatment", label: "其它治疗" },
+          ],
+        },
+        {
+          title: "病情评估",
+          fields: [
+            { key: "newOnset", label: "有无新发", yesNo: true },
+            { key: "skinLesion", label: "皮损" },
+            { key: "mucosa", label: "粘膜" },
+            { key: "pdai", label: "PDAI/BPDAI" },
+            { key: "nrs", label: "NRS/VAS" },
+            { key: "iga", label: "IGA" },
+            { key: "adverseReaction", label: "不良反应" },
+            { key: "lesionType", label: "皮损类型" },
+          ],
+        },
+        {
+          title: "实验室指标",
+          fields: [
+            { key: "bp180", label: "BP180" },
+            { key: "bp230", label: "BP230" },
+            { key: "dsg1", label: "DSG1" },
+            { key: "dsg3", label: "DSG3" },
+          ],
+        },
+        {
+          title: "中医四诊",
+          fields: [
+            { key: "syndrome", label: "证型" },
+            { key: "tongue", label: "舌象" },
+            { key: "pulse", label: "脉象" },
+            { key: "complexion", label: "面色" },
+          ],
+        },
+        {
+          title: "伴随症状",
+          fields: [
+            { key: "fatigue", label: "神疲乏力", yesNo: true },
+            { key: "palpitation", label: "心悸气短", yesNo: true },
+            { key: "weakLoin", label: "腰膝酸软", yesNo: true },
+            { key: "appetite", label: "食欲" },
+            { key: "stool", label: "大便异常", yesNo: true },
+            { key: "insomnia", label: "失眠多梦", yesNo: true },
+            { key: "cold", label: "畏寒", yesNo: true },
+            { key: "feverish", label: "烦热", yesNo: true },
+          ],
+        },
+      ];
+
+      const ALL_FIELD_COUNT =
+        BASELINE_FIELDS.length +
+        VISIT_FIELD_SECTIONS.reduce((n, s) => n + s.fields.length, 0);
+
+      function defaultBaseline(caseId, name, gender, age) {
+        return {
+          queueNo: `Q-${caseId.slice(-4)}`,
+          name,
+          diagnosis: "特应性皮炎",
+          treatmentMode: "中西医结合",
+          gender,
+          age: String(age),
+          weight: "58",
+          height: "162",
+          regNo: `R${caseId.replace(/_/g, "")}`,
+          phone: "138****6620",
+          address: "广东省广州市天河区**路**号",
+          note: "",
+          enrollDate: formatDate(addDays(TODAY, -35)),
+          source: "门诊招募",
+          doctor: "张医生",
+          relapseEnroll: false,
+        };
+      }
+
+      function buildVisitRecord(f, round) {
+        const done = !!f.actual;
+        const templates = {
+          1: {
+            photo: true, sample: true, relapseVisit: false,
+            hormone: true, biologic: false, immunosuppressant: false, otherTreatment: "中药汤剂",
+            newOnset: false, skinLesion: "轻度", mucosa: "无", pdai: "18", nrs: "4", iga: "2",
+            adverseReaction: "无", lesionType: "湿疹样",
+            bp180: "45 U/ml", bp230: "阴性", dsg1: "—", dsg3: "—",
+            syndrome: f.syndrome || "脾胃虚寒", tongue: f.tongue || "淡红舌，薄白苔",
+            pulse: "沉细", complexion: "萎黄",
+            fatigue: true, palpitation: false, weakLoin: true, appetite: "一般",
+            stool: false, insomnia: true, cold: true, feverish: false,
+          },
+          2: {
+            photo: true, sample: false, relapseVisit: false,
+            hormone: true, biologic: false, immunosuppressant: false, otherTreatment: "—",
+            newOnset: false, skinLesion: "轻度", mucosa: "无", pdai: "12", nrs: "3", iga: "1",
+            adverseReaction: "无", lesionType: "湿疹样",
+            bp180: "32 U/ml", bp230: "阴性", dsg1: "—", dsg3: "—",
+            syndrome: "脾胃虚寒", tongue: "淡红舌，薄苔",
+            pulse: "细弱", complexion: "少华",
+            fatigue: false, palpitation: false, weakLoin: false, appetite: "尚可",
+            stool: false, insomnia: false, cold: false, feverish: false,
+          },
+          3: {
+            photo: null, sample: null, relapseVisit: null,
+            hormone: null, biologic: null, immunosuppressant: null, otherTreatment: "",
+            newOnset: null, skinLesion: "", mucosa: "", pdai: "", nrs: "", iga: "",
+            adverseReaction: "", lesionType: "",
+            bp180: "", bp230: "", dsg1: "", dsg3: "",
+            syndrome: "", tongue: "", pulse: "", complexion: "",
+            fatigue: null, palpitation: null, weakLoin: null, appetite: "",
+            stool: null, insomnia: null, cold: null, feverish: null,
+          },
+        };
+        const t = templates[round] || templates[3];
+        const rec = { visitDate: f.actual || f.planned };
+        Object.entries(t).forEach(([k, val]) => {
+          if (typeof val === "boolean" || val === null) rec[k] = done ? val : null;
+          else rec[k] = done ? val : "";
+        });
+        if (done && f.uct != null) rec.pdai = String(f.uct);
+        if (done && f.syndrome) rec.syndrome = f.syndrome;
+        if (done && f.tongue) rec.tongue = f.tongue;
+        return rec;
+      }
+
+      /** 图片提供的 3 条病案数据 */
+      const VISIT_V1_ZHANGSAN = {
+        visitDate: "2024-05-20",
+        photo: true, sample: true, relapseVisit: false,
+        hormone: "泼尼松", biologic: "无", immunosuppressant: "无", otherTreatment: "无",
+        newOnset: false, skinLesion: "躯干、四肢", mucosa: "无",
+        pdai: "15", nrs: "2", iga: "2",
+        adverseReaction: "无", lesionType: "红斑、水疱",
+        bp180: "120", bp230: "80", dsg1: "150", dsg3: "40",
+        syndrome: "脾虚湿蕴", tongue: "舌红苔腻", pulse: "脉滑", complexion: "萎黄",
+        fatigue: true, palpitation: false, weakLoin: true, appetite: "纳差",
+        stool: true, insomnia: true, cold: false, feverish: false,
+      };
+      const VISIT_V1_LISI = {
+        visitDate: "2024-05-21",
+        photo: false, sample: true, relapseVisit: true,
+        hormone: "甲泼尼龙", biologic: "无", immunosuppressant: "硫唑嘌呤", otherTreatment: "无",
+        newOnset: true, skinLesion: "四肢", mucosa: "无",
+        pdai: "25", nrs: "4", iga: "3",
+        adverseReaction: "库欣面容", lesionType: "水疱、大疱",
+        bp180: "200", bp230: "150", dsg1: "10", dsg3: "5",
+        syndrome: "阴虚内热", tongue: "舌红少苔", pulse: "脉细数", complexion: "潮红",
+        fatigue: false, palpitation: true, weakLoin: false, appetite: "正常",
+        stool: true, insomnia: false, cold: true, feverish: true,
+      };
+      const VISIT_V1_WANGWU = {
+        visitDate: "2024-05-22",
+        photo: true, sample: false, relapseVisit: false,
+        hormone: "无", biologic: "利妥昔单抗", immunosuppressant: "无", otherTreatment: "无",
+        newOnset: false, skinLesion: "头部、颈部", mucosa: "口腔粘膜",
+        pdai: "8", nrs: "1", iga: "1",
+        adverseReaction: "无", lesionType: "糜烂",
+        bp180: "50", bp230: "20", dsg1: "180", dsg3: "60",
+        syndrome: "心火上炎", tongue: "舌尖红", pulse: "脉数", complexion: "红赤",
+        fatigue: true, palpitation: true, weakLoin: false, appetite: "正常",
+        stool: false, insomnia: false, cold: false, feverish: true,
+      };
+
+      function emptyVisit() {
+        return {
+          visitDate: "", photo: null, sample: null, relapseVisit: null,
+          hormone: "", biologic: "", immunosuppressant: "", otherTreatment: "",
+          newOnset: null, skinLesion: "", mucosa: "", pdai: "", nrs: "", iga: "",
+          adverseReaction: "", lesionType: "",
+          bp180: "", bp230: "", dsg1: "", dsg3: "",
+          syndrome: "", tongue: "", pulse: "", complexion: "",
+          fatigue: null, palpitation: null, weakLoin: null, appetite: "",
+          stool: null, insomnia: null, cold: null, feverish: null,
+        };
+      }
+
+      function buildCases() {
+        const d = (offset) => formatDate(addDays(TODAY, offset));
+        const raw = [
+          {
+            id: "10001",
+            name: "张三",
+            meta: "男 · 56岁",
+            baseline: {
+              queueNo: "1",
+              name: "张三",
+              diagnosis: "天疱疮",
+              treatmentMode: "激素",
+              gender: "男",
+              age: "56",
+              weight: "75",
+              height: "172",
+              regNo: "10001",
+              phone: "13811112222",
+              address: "北京市朝阳区建国路88号",
+              note: "无",
+              enrollDate: "2024-01-15",
+              source: "门诊",
+              doctor: "李医生",
+              relapseEnroll: false,
+            },
+            followups: [
+              { round: 1, planned: "2024-05-20", actual: "2024-05-20", next: "2024-06-03" },
+              { round: 2, planned: d(2), actual: null, next: d(16) },
+              { round: 3, planned: d(20), actual: null, next: null },
+            ],
+            visitRecords: [VISIT_V1_ZHANGSAN, emptyVisit(), emptyVisit()],
+          },
+          {
+            id: "10002",
+            name: "李四",
+            meta: "女 · 68岁",
+            baseline: {
+              queueNo: "2",
+              name: "李四",
+              diagnosis: "类天疱疮",
+              treatmentMode: "激素+免疫抑制剂",
+              gender: "女",
+              age: "68",
+              weight: "60",
+              height: "160",
+              regNo: "10002",
+              phone: "13922223333",
+              address: "上海市徐汇区淮海中路100号",
+              note: "高血压病史",
+              enrollDate: "2024-02-10",
+              source: "住院",
+              doctor: "王医生",
+              relapseEnroll: true,
+            },
+            followups: [
+              { round: 1, planned: "2024-05-21", actual: "2024-05-21", next: "2024-06-04" },
+              { round: 2, planned: d(-12), actual: null, next: d(2) },
+              { round: 3, planned: d(5), actual: null, next: null },
+            ],
+            visitRecords: [VISIT_V1_LISI, emptyVisit(), emptyVisit()],
+          },
+          {
+            id: "10003",
+            name: "王五",
+            meta: "男 · 42岁",
+            baseline: {
+              queueNo: "3",
+              name: "王五",
+              diagnosis: "寻常型天疱疮",
+              treatmentMode: "生物制剂",
+              gender: "男",
+              age: "42",
+              weight: "82",
+              height: "180",
+              regNo: "10003",
+              phone: "13744445555",
+              address: "广州市天河区体育西路128号",
+              note: "无",
+              enrollDate: "2024-03-05",
+              source: "门诊",
+              doctor: "张医生",
+              relapseEnroll: false,
+            },
+            followups: [
+              { round: 1, planned: "2024-05-22", actual: "2024-05-22", next: "2024-06-05" },
+              { round: 2, planned: d(1), actual: null, next: d(15) },
+              { round: 3, planned: d(18), actual: null, next: null },
+            ],
+            visitRecords: [VISIT_V1_WANGWU, emptyVisit(), emptyVisit()],
+          },
+        ];
+        return raw.map((c) => ({
+          ...c,
+          followups: c.followups.map((f) => ({ ...f, title: ROUND_NAMES[f.round] })),
+        }));
+      }
+
+      let CASES = buildCases();
+      let currentCaseId = "10001";
+      let currentPatient = "张三";
+      let drawerRoundCache = 1;
+
+      function startOfDay(date) {
+        const d = new Date(date);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+      function addDays(date, days) {
+        const d = new Date(date);
+        d.setDate(d.getDate() + days);
+        return d;
+      }
+      function parseYMD(str) {
+        if (!str) return null;
+        const [y, m, day] = str.split("-").map(Number);
+        return startOfDay(new Date(y, m - 1, day));
+      }
+      function formatDate(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+      }
+      function daysBetween(from, to) {
+        return Math.round((startOfDay(to) - startOfDay(from)) / 86400000);
+      }
+
+      /** PRD 12.1 随访状态逻辑 */
+      function computeFollowupStatus(followup) {
+        if (followup.actual) return "done";
+        const planned = parseYMD(followup.planned);
+        const diff = daysBetween(TODAY, planned);
+        if (diff < 0) return "overdue";
+        if (diff <= SOON_DAYS) return "soon";
+        return "pending";
+      }
+
+      function getCaseById(id) {
+        return CASES.find((c) => c.id === id);
+      }
+
+      function getActiveFollowup(caseData) {
+        const incomplete = caseData.followups.filter((f) => !f.actual);
+        if (incomplete.length === 0) {
+          const last = caseData.followups[caseData.followups.length - 1];
+          return { followup: last, status: "done" };
+        }
+        let best = incomplete[0];
+        let bestPri = statusPriority(computeFollowupStatus(best));
+        incomplete.forEach((f) => {
+          const p = statusPriority(computeFollowupStatus(f));
+          if (p > bestPri) {
+            best = f;
+            bestPri = p;
+          }
+        });
+        return { followup: best, status: computeFollowupStatus(best) };
+      }
+
+      function statusPriority(s) {
+        return { overdue: 4, soon: 3, pending: 2, done: 1 }[s] || 0;
+      }
+
+      function caseListSummary(caseData) {
+        const { followup, status } = getActiveFollowup(caseData);
+        if (status === "done" && caseData.followups.every((f) => f.actual)) {
+          return { text: "已随访 · 完成3次", cls: "done" };
+        }
+        const labels = { done: "已随访", pending: "待随访", soon: "即将随访", overdue: "已超期" };
+        return { text: `${labels[status]} · 第${followup.round}次`, cls: status === "overdue" ? "overdue" : status };
+      }
+
+      function enrichFollowup(f) {
+        const status = computeFollowupStatus(f);
+        return { ...f, status, statusLabel: STATUS_META[status].label };
+      }
+
+      /* —— 渲染 —— */
+      function renderAll() {
+        CASES = buildCases();
+        renderCaseList();
+        renderSessions();
+        renderFollowupPanel();
+        renderMgmtTable();
+        document.getElementById("dev-nav-date").textContent =
+          `基准日期：${formatDate(TODAY)}（自动同步系统日期）`;
+        const pageInfo = document.querySelector("#page-mgmt .pagination span");
+        if (pageInfo) pageInfo.textContent = `共 ${CASES.length} 条记录`;
+      }
+
+      function renderCaseList() {
+        const list = document.getElementById("case-list");
+        list.innerHTML = CASES.map((c) => {
+          const sum = caseListSummary(c);
+          const active = c.id === currentCaseId ? " active" : "";
+          return `<li class="case-list-item${active}" data-case="${c.id}" data-name="${c.name}" onclick="selectCase(this)">
+            <div class="case-list-id">病案ID: ${c.id}</div>
+            <div class="case-list-meta">${c.name} · ${c.meta}</div>
+            <div class="case-list-status ${sum.cls}">${sum.text}</div>
+          </li>`;
+        }).join("");
+      }
+
+      function renderSessions() {
+        const panel = document.getElementById("panel-sessions");
+        const items = [
+          { title: "初诊问诊", offset: -33, meta: "收集病案信息 · 已完成舌像采集" },
+          { title: "AI辅助分析", offset: -32, meta: "证型：脾胃虚寒 · AI已生成诊疗建议" },
+          { title: "用药咨询", offset: -25, meta: "患者询问服药注意事项" },
+        ];
+        panel.innerHTML = items
+          .map(
+            (s) => `<div class="session-item">
+              <div class="session-item-title">${s.title} · ${formatDate(addDays(TODAY, s.offset))}</div>
+              <div class="session-item-meta">${s.meta}</div>
+            </div>`
+          )
+          .join("");
+      }
+
+      function formatFieldValue(val, yesNo) {
+        if (val === null || val === undefined || val === "") {
+          return { text: "—", cls: "empty" };
+        }
+        if (yesNo) {
+          const yes = val === true || val === "是" || val === "有";
+          return { text: yes ? "是" : "否", cls: yes ? "tag-yes" : "tag-no" };
+        }
+        return { text: String(val), cls: "" };
+      }
+
+      function renderFieldCell(field, data) {
+        const v = formatFieldValue(data[field.key], field.yesNo);
+        const span = field.span ? ` span-${field.span}` : "";
+        return `<div class="field-cell${span}">
+          <div class="field-label">${field.label}</div>
+          <div class="field-value ${v.cls}">${v.text}</div>
+        </div>`;
+      }
+
+      function renderFollowupPanel() {
+        const caseData = getCaseById(currentCaseId);
+        if (!caseData) return;
+
+        const enriched = caseData.followups.map(enrichFollowup);
+        if (!enriched.find((f) => f.round === currentVisitRound)) {
+          currentVisitRound = enriched[0]?.round || 1;
+        }
+
+        const b = caseData.baseline;
+        document.getElementById("patient-brief").innerHTML = `
+          <span class="patient-brief-item"><strong>队列</strong>${b.queueNo}</span>
+          <span class="patient-brief-item"><strong>姓名</strong>${b.name}</span>
+          <span class="patient-brief-item"><strong>诊断</strong>${b.diagnosis}</span>
+          <span class="patient-brief-item"><strong>登记号</strong>${b.regNo}</span>
+          <span class="patient-brief-item"><strong>入组</strong>${b.enrollDate}</span>
+          <span class="patient-brief-item"><strong>管床医生</strong>${b.doctor}</span>
+        `;
+
+        document.getElementById("visit-tabs").innerHTML = enriched
+          .map((f) => {
+            const active = f.round === currentVisitRound ? " active" : "";
+            const date = f.actual || f.planned;
+            return `<div class="visit-tab${active}" onclick="selectVisitRound(${f.round})">
+              <span>${f.title}</span>
+              <span class="visit-tab-date">${date}</span>
+              <span class="followup-badge ${STATUS_META[f.status].badge}">${f.statusLabel}</span>
+            </div>`;
+          })
+          .join("");
+
+        const visitIdx = currentVisitRound - 1;
+        const visit = caseData.visitRecords[visitIdx] || {};
+        const openClass = (i) => (i < 2 ? "" : " collapsed");
+
+        let detailHtml = `
+          <div class="record-section${openClass(0)}" data-section>
+            <div class="record-section-header" onclick="toggleSection(this.parentElement)">
+              <span class="record-section-title">入组信息 <span class="record-section-count">${BASELINE_FIELDS.length} 项</span></span>
+              <span class="record-section-chevron">▼</span>
+            </div>
+            <div class="record-section-body">
+              <div class="field-grid">${BASELINE_FIELDS.map((f) => renderFieldCell(f, b)).join("")}</div>
+            </div>
+          </div>`;
+
+        VISIT_FIELD_SECTIONS.forEach((sec, i) => {
+          detailHtml += `
+            <div class="record-section${openClass(i + 1)}" data-section>
+              <div class="record-section-header" onclick="toggleSection(this.parentElement)">
+                <span class="record-section-title">${sec.title} <span class="record-section-count">${sec.fields.length} 项 · 第${currentVisitRound}次访视</span></span>
+                <span class="record-section-chevron">▼</span>
+              </div>
+              <div class="record-section-body">
+                <div class="field-grid">${sec.fields.map((f) => renderFieldCell(f, visit)).join("")}</div>
+              </div>
+            </div>`;
+        });
+
+        document.getElementById("followup-detail-view").innerHTML = detailHtml;
+        document.getElementById("followup-field-count").textContent = `共 ${ALL_FIELD_COUNT} 个字段`;
+        document.getElementById("followup-sync-hint").textContent =
+          `基准日期 ${formatDate(TODAY)} · 状态自动计算`;
+
+        renderMatrixTable(caseData, enriched);
+        applyFollowupViewMode();
+      }
+
+      function renderMatrixTable(caseData, enriched) {
+        const b = caseData.baseline;
+        let html = `<table class="matrix-table"><thead><tr>
+          <th class="col-field">字段</th>
+          <th class="col-baseline">入组/基线</th>
+          ${enriched.map((f) => `<th>${f.title}<br><span style="font-weight:400;color:#9ca3af">${f.actual || f.planned}</span></th>`).join("")}
+        </tr></thead><tbody>`;
+
+        const colSpan = 2 + enriched.length;
+        html += `<tr class="section-row"><td colspan="${colSpan}">入组信息</td></tr>`;
+        BASELINE_FIELDS.forEach((field) => {
+          const v = formatFieldValue(b[field.key], field.yesNo);
+          html += `<tr><td class="col-field">${field.label}</td>
+            <td class="col-baseline">${v.text}</td>
+            ${enriched.map(() => `<td>—</td>`).join("")}</tr>`;
+        });
+
+        VISIT_FIELD_SECTIONS.forEach((sec) => {
+          html += `<tr class="section-row"><td colspan="${colSpan}">${sec.title}</td></tr>`;
+          sec.fields.forEach((field) => {
+            html += `<tr><td class="col-field">${field.label}</td>
+              <td class="col-baseline">—</td>
+              ${caseData.visitRecords.map((vr) => {
+                const v = formatFieldValue(vr[field.key], field.yesNo);
+                return `<td class="${v.cls}">${v.text}</td>`;
+              }).join("")}</tr>`;
+          });
+        });
+
+        html += "</tbody></table>";
+        document.getElementById("matrix-scroll").innerHTML = html;
+      }
+
+      function selectVisitRound(round) {
+        currentVisitRound = round;
+        renderFollowupPanel();
+      }
+
+      function setFollowupView(mode) {
+        followupViewMode = mode;
+        document.getElementById("btn-view-detail").classList.toggle("active", mode === "detail");
+        document.getElementById("btn-view-matrix").classList.toggle("active", mode === "matrix");
+        applyFollowupViewMode();
+      }
+
+      function applyFollowupViewMode() {
+        const detail = document.getElementById("followup-detail-view");
+        const matrix = document.getElementById("followup-matrix-view");
+        const tabs = document.getElementById("visit-tabs");
+        if (followupViewMode === "matrix") {
+          detail.classList.add("hidden");
+          matrix.classList.add("active");
+          tabs.style.display = "none";
+        } else {
+          detail.classList.remove("hidden");
+          matrix.classList.remove("active");
+          tabs.style.display = "flex";
+        }
+      }
+
+      function toggleSection(el) {
+        el.classList.toggle("collapsed");
+      }
+
+      function toggleAllSections(expand) {
+        document.querySelectorAll("#followup-detail-view .record-section").forEach((el) => {
+          if (expand) el.classList.remove("collapsed");
+          else el.classList.add("collapsed");
+        });
+      }
+
+      function renderMgmtTable() {
+        const tbody = document.getElementById("mgmt-table-body");
+        tbody.innerHTML = CASES.map((c) => {
+          const { followup, status } = getActiveFollowup(c);
+          const st = STATUS_META[status];
+          const prev = c.followups.find((f) => f.round === followup.round - 1);
+          const actualDisplay = followup.actual || "—";
+          const plannedDisplay = followup.planned;
+          const nextDisplay = followup.next || (followup.actual ? "—" : followup.planned);
+          const allDone = c.followups.every((f) => f.actual);
+          const remindBtn = allDone
+            ? `<button class="btn-link" style="color:#9ca3af;cursor:default;">—</button>`
+            : `<button class="btn-link" onclick="openRemindModal()">去提醒</button>`;
+          const completeBtn = allDone
+            ? `<button class="btn-link" onclick="goToCase('${c.id}','${c.name}'); setTimeout(()=>openFollowupDrawer(3),100)">查看</button>`
+            : `<button class="btn-link" onclick="goToCase('${c.id}','${c.name}'); setTimeout(()=>openAddFollowupModal(),100)">去完成</button>`;
+          return `<tr data-status="${status}" data-search="${c.id} ${c.name}">
+            <td><input type="checkbox" class="row-check" onchange="updateBatchBar()" /></td>
+            <td><span class="case-link" onclick="goToCase('${c.id}','${c.name}')">${c.id}</span></td>
+            <td>${c.name}</td>
+            <td>第${followup.round}次</td>
+            <td>${plannedDisplay}</td>
+            <td>${actualDisplay}</td>
+            <td>${nextDisplay}</td>
+            <td><span class="status-tag ${st.tag}">${st.label}</span></td>
+            <td class="table-actions">
+              ${remindBtn}
+              ${completeBtn}
+              <button class="btn-link" onclick="openCycleModal()">设置周期</button>
+            </td>
+          </tr>`;
+        }).join("");
+      }
+
+      function addDaysStr(ymd, days) {
+        return formatDate(addDays(parseYMD(ymd), days));
+      }
+
+      function buildFormSection(title, fields, data, prefix) {
+        const cells = fields
+          .map((f) => {
+            const val = data[f.key];
+            const key = `${prefix}.${f.key}`;
+            const spanCls = f.span === 2 ? "span-2" : f.span >= 3 ? "span-3" : "";
+            if (f.yesNo) {
+              const sel = (v) =>
+                val === v ? "selected" : val === null || val === undefined ? "" : "";
+              return `<div class="form-group ${spanCls}">
+                <label class="form-label">${f.label}</label>
+                <select class="form-select" data-key="${key}">
+                  <option value="">—</option>
+                  <option value="1" ${val === true ? "selected" : ""}>是</option>
+                  <option value="0" ${val === false ? "selected" : ""}>否</option>
+                </select>
+              </div>`;
+            }
+            const display = val === null || val === undefined ? "" : String(val);
+            return `<div class="form-group ${spanCls}">
+              <label class="form-label">${f.label}</label>
+              <input type="text" class="form-input" data-key="${key}" value="${display.replace(/"/g, "&quot;")}" />
+            </div>`;
+          })
+          .join("");
+        return `<div class="form-section-block">
+          <div class="form-section-block-title">${title}</div>
+          <div class="form-section-block-body">${cells}</div>
+        </div>`;
+      }
+
+      function renderAddFollowupForm() {
+        const caseData = getCaseById(currentCaseId);
+        if (!caseData) return;
+        const idx = currentVisitRound - 1;
+        const visit = { ...emptyVisit(), ...(caseData.visitRecords[idx] || {}) };
+        const b = caseData.baseline;
+        const fu = caseData.followups[idx];
+        const defaultVisitDate = visit.visitDate || fu?.actual || fu?.planned || formatDate(TODAY);
+        const defaultNext = fu?.next || formatDate(addDays(TODAY, 14));
+
+        let html = `<p class="form-hint">填写 <strong>${caseData.name}</strong>（队列 ${b.queueNo}）第 <strong>${currentVisitRound}</strong> 次随访 CRF 数据</p>`;
+        html += `<div class="form-section-block">
+          <div class="form-section-block-title">访视时间</div>
+          <div class="form-section-block-body">
+            <div class="form-group">
+              <label class="form-label">访视日期 <span class="required">*</span></label>
+              <input type="date" class="form-input" data-key="visit.visitDate" value="${defaultVisitDate}" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">下次随访时间</label>
+              <input type="date" class="form-input" id="add-next-date" value="${defaultNext}" />
+            </div>
+          </div>
+        </div>`;
+        html += buildFormSection("入组信息", BASELINE_FIELDS, b, "baseline");
+        VISIT_FIELD_SECTIONS.forEach((sec) => {
+          const fields =
+            sec.title === "访视信息"
+              ? sec.fields.filter((f) => f.key !== "visitDate")
+              : sec.fields;
+          html += buildFormSection(sec.title, fields, visit, "visit");
+        });
+        html += `<div class="form-section-block">
+          <div class="form-section-block-title">舌像上传</div>
+          <div class="form-section-block-body">
+            <div class="form-group span-3"><div class="upload-zone">点击或拖拽上传舌像图片</div></div>
+          </div>
+        </div>`;
+
+        document.getElementById("add-form-container").innerHTML = html;
+        document.getElementById("add-modal-title").textContent =
+          `添加随访 · ${caseData.name} · 第${currentVisitRound}次`;
+      }
+
+      function readFormRecord(prefix, fields) {
+        const rec = {};
+        fields.forEach((f) => {
+          const el = document.querySelector(`[data-key="${prefix}.${f.key}"]`);
+          if (!el) return;
+          if (f.yesNo) {
+            rec[f.key] = el.value === "1" ? true : el.value === "0" ? false : null;
+          } else {
+            rec[f.key] = el.value.trim();
+          }
+        });
+        return rec;
+      }
+
+      function saveFollowupFromForm() {
+        const caseData = getCaseById(currentCaseId);
+        if (!caseData) return;
+        const idx = currentVisitRound - 1;
+        Object.assign(caseData.baseline, readFormRecord("baseline", BASELINE_FIELDS));
+        const visit = readFormRecord("visit", VISIT_FIELD_SECTIONS.flatMap((s) => s.fields));
+        const dateEl = document.querySelector('[data-key="visit.visitDate"]');
+        if (dateEl) visit.visitDate = dateEl.value;
+        caseData.visitRecords[idx] = visit;
+        const fu = caseData.followups[idx];
+        if (fu) {
+          fu.actual = visit.visitDate || formatDate(TODAY);
+          if (dateEl && dateEl.value) fu.planned = dateEl.value;
+          const nextEl = document.getElementById("add-next-date");
+          if (nextEl && nextEl.value) fu.next = nextEl.value;
+        }
+      }
+
+      /* —— 页面交互 —— */
+      function showPage(page) {
+        document.querySelectorAll(".page-view").forEach((p) => p.classList.remove("active"));
+        document.querySelectorAll(".sidebar-nav-item").forEach((n) => n.classList.remove("active"));
+        const fab = document.getElementById("fab-mgmt");
+        const breadcrumb = document.getElementById("breadcrumb");
+        document.querySelector('[data-nav="cases"]').classList.add("active");
+
+        if (page === "cases") {
+          document.getElementById("page-cases").classList.add("active");
+          fab.classList.remove("hidden");
+          breadcrumb.innerHTML = `首页 → <strong>我的病案</strong> → 病案ID: ${currentCaseId}`;
+        } else if (page === "mgmt") {
+          document.getElementById("page-mgmt").classList.add("active");
+          fab.classList.add("hidden");
+          breadcrumb.innerHTML = `首页 → <strong>我的病案</strong> → <strong>病案随访管理</strong>`;
+          renderMgmtTable();
+        }
+      }
+
+      document.querySelectorAll(".sidebar-nav-item").forEach((item) => {
+        item.addEventListener("click", () => {
+          const nav = item.dataset.nav;
+          if (nav === "cases") showPage("cases");
+          else if (nav === "home" || nav === "dashboard") showToast("该页面为原型占位");
+        });
+      });
+
+      function switchTab(tab) {
+        document.querySelectorAll(".detail-tab").forEach((t) => {
+          t.classList.toggle("active", t.dataset.tab === tab);
+        });
+        document.getElementById("panel-sessions").classList.toggle("active", tab === "sessions");
+        document.getElementById("panel-followup").classList.toggle("active", tab === "followup");
+        if (tab === "followup") renderFollowupPanel();
+      }
+
+      function selectCase(el) {
+        document.querySelectorAll(".case-list-item").forEach((i) => i.classList.remove("active"));
+        el.classList.add("active");
+        currentCaseId = el.dataset.case;
+        currentPatient = el.dataset.name;
+        const cd = getCaseById(currentCaseId);
+        if (cd) currentVisitRound = getActiveFollowup(cd).followup.round;
+        document.getElementById("detail-patient-name").textContent = currentPatient;
+        document.getElementById("detail-case-id").textContent = `病案ID: ${currentCaseId}`;
+        document.getElementById("breadcrumb").innerHTML =
+          `首页 → <strong>我的病案</strong> → 病案ID: ${currentCaseId}`;
+        document.querySelector('#settings-modal-overlay .modal-title').textContent =
+          `随访设置 · ${currentCaseId}`;
+        renderFollowupPanel();
+      }
+
+      function filterCases() {
+        const q = document.getElementById("case-search").value.toLowerCase();
+        document.querySelectorAll(".case-list-item").forEach((item) => {
+          const text = (item.dataset.case + " " + item.dataset.name).toLowerCase();
+          item.style.display = text.includes(q) ? "" : "none";
+        });
+      }
+
+      function goToCase(caseId, name) {
+        currentCaseId = caseId;
+        currentPatient = name;
+        showPage("cases");
+        switchTab("followup");
+        renderCaseList();
+        renderFollowupPanel();
+        document.getElementById("detail-patient-name").textContent = name;
+        document.getElementById("detail-case-id").textContent = `病案ID: ${caseId}`;
+      }
+
+      function openFollowupDrawer(round) {
+        drawerRoundCache = round;
+        const caseData = getCaseById(currentCaseId);
+        const f = caseData?.followups.find((x) => x.round === round);
+        if (!f) return;
+        const ef = enrichFollowup(f);
+        document.getElementById("drawer-title").textContent = `随访详情 · ${f.title}`;
+        document.getElementById("drawer-patient").textContent = currentPatient;
+        document.getElementById("drawer-case-id").textContent = currentCaseId;
+        document.getElementById("drawer-time").textContent =
+          f.actual ? f.actual : `预计 ${f.planned}`;
+        document.getElementById("drawer-round").textContent = `第 ${f.round} 次 · ${ef.statusLabel}`;
+        document.getElementById("drawer-uct").textContent = f.uct ?? (f.actual ? "—" : "待填写");
+        document.getElementById("drawer-dlqi").textContent = f.dlqi ?? (f.actual ? "—" : "待填写");
+        document.getElementById("drawer-ai").textContent =
+          f.ai ||
+          (ef.status === "overdue"
+            ? "该次随访已超过预计时间，建议尽快完成随访并更新患者档案。"
+            : "暂无 AI 分析，完成随访后将自动生成摘要。");
+        document.getElementById("drawer-advice").textContent = f.advice || "—";
+        document.getElementById("drawer-next").textContent = f.next || "—";
+        document.getElementById("drawer-overlay").classList.add("active");
+      }
+
+      function closeDrawer(e) {
+        if (e && e.target !== document.getElementById("drawer-overlay")) return;
+        document.getElementById("drawer-overlay").classList.remove("active");
+      }
+
+      function openModal(id) {
+        document.getElementById(id).classList.add("active");
+      }
+      function closeModal(id) {
+        document.getElementById(id).classList.remove("active");
+      }
+
+      function setAddFollowupMode(mode) {
+        addFollowupMode = mode;
+        document.getElementById("add-tab-ai").classList.toggle("active", mode === "ai");
+        document.getElementById("add-tab-manual").classList.toggle("active", mode === "manual");
+        document.getElementById("add-ai-panel").classList.toggle("active", mode === "ai");
+        document.getElementById("add-form-panel").classList.toggle("active", mode === "manual");
+        if (mode === "manual") renderAddFollowupForm();
+        updateAddModalFooter();
+      }
+
+      function updateAddModalFooter() {
+        const btn = document.getElementById("btn-apply-ai");
+        if (btn) btn.style.display = aiExtractedData && addFollowupMode === "ai" ? "inline-block" : "none";
+      }
+
+      function formatDateTime(d) {
+        const p = (n) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+      }
+
+      function initAiChat() {
+        aiChatMessages = [];
+        aiExtractedData = null;
+        aiExtractPending = false;
+        const caseData = getCaseById(currentCaseId);
+        const name = caseData?.name || currentPatient;
+        aiChatMessages.push({
+          role: "bot",
+          time: formatDateTime(new Date()),
+          html: `您好，我是<strong>临床医学专业智能助手「小智」</strong>。请上传随访单、CRF 表格或现场拍摄图片，我将自动识别并填入随访信息。<br><br>当前病案：<strong>${name}</strong> · 第 <strong>${currentVisitRound}</strong> 次随访`,
+        });
+        renderAiChat();
+        updateAddModalFooter();
+      }
+
+      function renderAiChat() {
+        const body = document.getElementById("ai-chat-body");
+        if (!body) return;
+        if (aiChatMessages.length === 1 && !aiExtractPending) {
+          body.innerHTML =
+            aiChatMessages.map((m) => renderAiMessage(m)).join("") +
+            `<div class="ai-upload-hint">
+              <div class="ai-upload-hint-icon">📷</div>
+              点击右下角 📎 上传随访单图片、Excel 或 PDF<br>支持拍照、截图、表格文件识别
+            </div>`;
+          return;
+        }
+        body.innerHTML = aiChatMessages.map((m) => renderAiMessage(m)).join("");
+        if (aiExtractPending) {
+          body.innerHTML += `<div class="ai-msg ai-msg-bot">
+            <div class="ai-bot-avatar">智</div>
+            <div><div class="ai-msg-meta">${formatDateTime(new Date())}</div>
+            <div class="ai-bot-bubble"><div class="ai-typing"><span></span><span></span><span></span></div> 正在识别随访信息…</div></div>
+          </div>`;
+        }
+        body.scrollTop = body.scrollHeight;
+      }
+
+      function renderAiMessage(msg) {
+        if (msg.role === "user") {
+          let content = `<div>${msg.text || "收集随访信息"}</div>`;
+          if (msg.file) {
+            const isImg = msg.file.type.startsWith("image/");
+            content += `<div class="ai-file-card">
+              <div class="ai-file-icon ${isImg ? "img" : ""}">${isImg ? "IMG" : "XLS"}</div>
+              <div><div class="ai-file-name">${msg.file.name}</div><div class="ai-file-size">${msg.file.size}</div></div>
+            </div>`;
+          }
+          return `<div class="ai-msg ai-msg-user">
+            <div class="ai-msg-meta">${msg.time}</div>
+            <div class="ai-user-bubble">${content}</div>
+          </div>`;
+        }
+        return `<div class="ai-msg ai-msg-bot">
+          <div class="ai-bot-avatar">智</div>
+          <div>
+            <div class="ai-msg-meta">${msg.time}</div>
+            <div class="ai-bot-bubble">${msg.html}</div>
+          </div>
+        </div>`;
+      }
+
+      function handleAiFileUpload(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        event.target.value = "";
+        const sizeStr =
+          file.size < 1024 * 1024
+            ? `${(file.size / 1024).toFixed(2)} KB`
+            : `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        aiChatMessages.push({
+          role: "user",
+          time: formatDateTime(new Date()),
+          text: "收集随访信息",
+          file: { name: file.name, size: sizeStr, type: file.type },
+        });
+        aiExtractPending = true;
+        renderAiChat();
+        setTimeout(() => simulateAiExtract(file), 1600);
+      }
+
+      function simulateAiExtract(file) {
+        const caseData = getCaseById(currentCaseId);
+        const idx = currentVisitRound - 1;
+        const template = caseData?.visitRecords?.[idx] || emptyVisit();
+        const b = caseData?.baseline || {};
+        const isEmpty = !template.visitDate || template.pdai === "";
+
+        aiExtractedData = {
+          baseline: { ...b },
+          visit: {
+            ...emptyVisit(),
+            ...template,
+            visitDate: template.visitDate || formatDate(TODAY),
+            photo: template.photo ?? true,
+            sample: template.sample ?? false,
+          },
+        };
+
+        if (isEmpty && caseData) {
+          const ref = caseData.visitRecords[0];
+          if (ref && ref.visitDate) {
+            Object.keys(ref).forEach((k) => {
+              if (ref[k] !== null && ref[k] !== "" && k !== "visitDate") {
+                if (aiExtractedData.visit[k] === "" || aiExtractedData.visit[k] === null) {
+                  if (typeof ref[k] === "boolean") aiExtractedData.visit[k] = ref[k];
+                  else if (ref[k]) aiExtractedData.visit[k] = ref[k];
+                }
+              }
+            });
+          }
+        }
+
+        const rows = getExtractPreviewRows(aiExtractedData);
+        const missing = [];
+        if (!aiExtractedData.visit.visitDate) missing.push("访视日期");
+        if (!aiExtractedData.visit.pdai) missing.push("PDAI/BPDAI");
+        if (!aiExtractedData.baseline.phone) missing.push("电话");
+
+        let tableHtml = '<table class="ai-extract-table">';
+        rows.forEach(([k, v]) => {
+          tableHtml += `<tr><td>${k}</td><td>${v || "—"}</td></tr>`;
+        });
+        tableHtml += "</table>";
+
+        const missingQ =
+          missing.length > 0
+            ? `为完善随访记录，请问<strong>${missing[0]}</strong>是什么？您可直接在下方输入回复。`
+            : "信息已识别完整，请点击底部「填入表单校对」或直接「保存」。";
+
+        aiExtractPending = false;
+        aiChatMessages.push({
+          role: "bot",
+          time: formatDateTime(new Date()),
+          html: `识别完成（来源：${file.name}）。已自动抓取 <strong>${rows.length}</strong> 项随访字段：<br>${tableHtml}<br>${missingQ}`,
+        });
+        renderAiChat();
+        updateAddModalFooter();
+        showToast("小智已识别随访信息，可填入表单或保存");
+      }
+
+      function getExtractPreviewRows(data) {
+        const rows = [];
+        const add = (k, v) => {
+          if (v === null || v === undefined || v === "") return;
+          rows.push([k, typeof v === "boolean" ? (v ? "是" : "否") : String(v)]);
+        };
+        add("患者姓名", data.baseline.name);
+        add("诊断", data.baseline.diagnosis);
+        add("治疗方式", data.baseline.treatmentMode);
+        add("访视日期", data.visit.visitDate);
+        add("激素", data.visit.hormone);
+        add("生物制剂", data.visit.biologic);
+        add("免疫抑制剂", data.visit.immunosuppressant);
+        add("PDAI/BPDAI", data.visit.pdai);
+        add("NRS/VAS", data.visit.nrs);
+        add("IGA", data.visit.iga);
+        add("BP180", data.visit.bp180);
+        add("证型", data.visit.syndrome);
+        add("舌象", data.visit.tongue);
+        add("皮损", data.visit.skinLesion);
+        add("是否复发", data.visit.relapseVisit);
+        return rows.slice(0, 14);
+      }
+
+      function aiSendUserMessage() {
+        const input = document.getElementById("ai-chat-input");
+        const text = input?.value?.trim();
+        if (!text) return;
+        input.value = "";
+        aiChatMessages.push({ role: "user", time: formatDateTime(new Date()), text });
+        renderAiChat();
+
+        setTimeout(() => {
+          if (aiExtractedData && text) {
+            if (text.includes("访视") || text.match(/\d{4}-\d{2}-\d{2}/)) {
+              const m = text.match(/\d{4}-\d{2}-\d{2}/);
+              if (m) aiExtractedData.visit.visitDate = m[0];
+            }
+            if (text.match(/^\d+$/)) aiExtractedData.visit.pdai = text;
+          }
+          aiChatMessages.push({
+            role: "bot",
+            time: formatDateTime(new Date()),
+            html: "好的，已记录您的补充信息。点击「填入表单校对」查看完整字段，或「保存并提醒」直接提交。",
+          });
+          renderAiChat();
+        }, 800);
+      }
+
+      function aiQuickChip(label) {
+        const input = document.getElementById("ai-chat-input");
+        if (input) input.value = label;
+        if (label === "收集随访信息") {
+          document.getElementById("ai-file-input").click();
+        }
+      }
+
+      function aiChatKeydown(e) {
+        if (e.key === "Enter" && !e.ctrlKey) {
+          e.preventDefault();
+          aiSendUserMessage();
+        }
+      }
+
+      function applyAiExtractToForm() {
+        if (!aiExtractedData) {
+          showToast("请先上传图片完成识别");
+          return;
+        }
+        const caseData = getCaseById(currentCaseId);
+        if (!caseData) return;
+        const idx = currentVisitRound - 1;
+        Object.assign(caseData.baseline, aiExtractedData.baseline);
+        caseData.visitRecords[idx] = { ...caseData.visitRecords[idx], ...aiExtractedData.visit };
+        const fu = caseData.followups[idx];
+        if (fu && aiExtractedData.visit.visitDate) {
+          fu.actual = aiExtractedData.visit.visitDate;
+          fu.planned = aiExtractedData.visit.visitDate;
+        }
+        setAddFollowupMode("manual");
+        showToast("识别结果已填入表单，请校对后保存");
+      }
+
+      function openAddFollowupModal() {
+        addFollowupMode = "ai";
+        document.getElementById("add-tab-ai").classList.add("active");
+        document.getElementById("add-tab-manual").classList.remove("active");
+        document.getElementById("add-ai-panel").classList.add("active");
+        document.getElementById("add-form-panel").classList.remove("active");
+        initAiChat();
+        renderAddFollowupForm();
+        const caseData = getCaseById(currentCaseId);
+        document.getElementById("add-modal-title").textContent =
+          `添加随访 · ${caseData?.name || currentPatient} · 第${currentVisitRound}次`;
+        openModal("add-modal-overlay");
+      }
+      function openSettingsModal() {
+        document.querySelector('#settings-modal-overlay .modal-title').textContent =
+          `随访设置 · ${currentCaseId}`;
+        openModal("settings-modal-overlay");
+      }
+      function openRemindModal() {
+        openModal("remind-modal-overlay");
+      }
+      function openBatchRemindModal() {
+        openModal("remind-modal-overlay");
+      }
+      function openCycleModal() {
+        openModal("cycle-modal-overlay");
+      }
+
+      function toggleSwitch(el) {
+        el.classList.toggle("on");
+      }
+
+      function saveFollowup(withRemind) {
+        if (addFollowupMode === "ai") {
+          if (!aiExtractedData) {
+            showToast("请先上传图片由小智识别，或切换至「手动填写」");
+            return;
+          }
+          const caseData = getCaseById(currentCaseId);
+          const idx = currentVisitRound - 1;
+          if (caseData) {
+            Object.assign(caseData.baseline, aiExtractedData.baseline);
+            caseData.visitRecords[idx] = { ...caseData.visitRecords[idx], ...aiExtractedData.visit };
+            const fu = caseData.followups[idx];
+            if (fu && aiExtractedData.visit.visitDate) {
+              fu.actual = aiExtractedData.visit.visitDate;
+              fu.planned = aiExtractedData.visit.visitDate;
+            }
+          }
+        } else {
+          saveFollowupFromForm();
+        }
+        closeModal("add-modal-overlay");
+        renderFollowupPanel();
+        renderCaseList();
+        renderMgmtTable();
+        showToast(withRemind ? "随访记录已保存，提醒已发送" : "随访记录已保存");
+      }
+      function saveSettings() {
+        closeModal("settings-modal-overlay");
+        showToast("随访设置已保存");
+      }
+      function saveCycle() {
+        closeModal("cycle-modal-overlay");
+        showToast("随访周期已更新");
+      }
+      function sendRemind() {
+        closeModal("remind-modal-overlay");
+        showToast("提醒已发送（短信 + 微信）");
+      }
+
+      function filterTable() {
+        const status = document.getElementById("filter-status").value;
+        const search = document.getElementById("mgmt-search").value.toLowerCase();
+        document.querySelectorAll("#mgmt-table-body tr").forEach((row) => {
+          const matchStatus = !status || row.dataset.status === status;
+          const matchSearch = !search || row.dataset.search.toLowerCase().includes(search);
+          row.style.display = matchStatus && matchSearch ? "" : "none";
+        });
+      }
+
+      function toggleSelectAll(cb) {
+        document.querySelectorAll(".row-check").forEach((c) => (c.checked = cb.checked));
+        updateBatchBar();
+      }
+      function updateBatchBar() {
+        const checked = document.querySelectorAll(".row-check:checked").length;
+        document.getElementById("batch-bar").style.display = checked > 0 ? "flex" : "none";
+        document.getElementById("selected-count").textContent = checked;
+      }
+      function clearSelection() {
+        document.querySelectorAll(".row-check").forEach((c) => (c.checked = false));
+        document.getElementById("select-all").checked = false;
+        updateBatchBar();
+      }
+
+      function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 2500);
+      }
+
+      /* —— 可拖拽原型导航 —— */
+      function initDevNavDrag() {
+        const nav = document.getElementById("dev-nav");
+        const handle = document.getElementById("dev-nav-drag");
+        const collapseBtn = document.getElementById("dev-nav-collapse");
+        const storageKey = "followup-dev-nav-pos";
+        const collapsedKey = "followup-dev-nav-collapsed";
+
+        try {
+          const saved = JSON.parse(localStorage.getItem(storageKey));
+          if (saved && typeof saved.left === "number") {
+            nav.style.left = saved.left + "px";
+            nav.style.top = saved.top + "px";
+            nav.style.right = "auto";
+          }
+        } catch (_) {}
+
+        if (localStorage.getItem(collapsedKey) === "1") {
+          nav.classList.add("collapsed");
+          collapseBtn.textContent = "+";
+        }
+
+        collapseBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          nav.classList.toggle("collapsed");
+          const collapsed = nav.classList.contains("collapsed");
+          collapseBtn.textContent = collapsed ? "+" : "−";
+          localStorage.setItem(collapsedKey, collapsed ? "1" : "0");
+        });
+
+        let dragging = false;
+        let startX, startY, startLeft, startTop;
+
+        handle.addEventListener("mousedown", (e) => {
+          if (e.target === collapseBtn) return;
+          dragging = true;
+          const rect = nav.getBoundingClientRect();
+          startX = e.clientX;
+          startY = e.clientY;
+          startLeft = rect.left;
+          startTop = rect.top;
+          nav.style.right = "auto";
+          e.preventDefault();
+        });
+
+        document.addEventListener("mousemove", (e) => {
+          if (!dragging) return;
+          const left = Math.max(8, Math.min(window.innerWidth - nav.offsetWidth - 8, startLeft + e.clientX - startX));
+          const top = Math.max(56, Math.min(window.innerHeight - 48, startTop + e.clientY - startY));
+          nav.style.left = left + "px";
+          nav.style.top = top + "px";
+        });
+
+        document.addEventListener("mouseup", () => {
+          if (!dragging) return;
+          dragging = false;
+          const rect = nav.getBoundingClientRect();
+          localStorage.setItem(storageKey, JSON.stringify({ left: rect.left, top: rect.top }));
+        });
+      }
+
+      document.querySelectorAll(".overlay:not(.drawer-mode)").forEach((overlay) => {
+        overlay.addEventListener("click", (e) => {
+          if (e.target === overlay) overlay.classList.remove("active");
+        });
+      });
+
+      renderAll();
+      initDevNavDrag();
+    </script>
+  </body>
+</html>
